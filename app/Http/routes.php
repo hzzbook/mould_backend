@@ -11,8 +11,21 @@
 |
 */
 
+Route::post('/', function () {
+    #return view('welcome');
+    return 'Hello World';
+});
+
+#App启动页
+Route::post('/startup', 'AppController@startup');
+
+#App登录
+Route::post('/login', 'AppController@login');
+
+#手机短信登录
 Route::get('/', function () {
-    return view('welcome');
+    #return view('welcome');
+    return 'Hello World';
 });
 
 /*
