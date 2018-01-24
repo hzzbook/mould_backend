@@ -35,7 +35,7 @@ Route::post('/login', 'AppController@login');
 Route::post('/quicklogin', 'AppController@quicklogin');
 
 #获取验证码
-Route::post('get_Smsscode', 'AppController@getSmsscode');
+Route::post('get_smsscode', 'AppController@getSmsscode');
 
 #App注册
 Route::post('/register', 'AppController@register');

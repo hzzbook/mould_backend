@@ -453,7 +453,7 @@ class AppController extends Controller
         /*$users = DB::select('select * from m_user_users');
         var_dump($users);*/
 
-        //Redis::set('good', 'testgood');
+        Redis::set('good', 'testgood');
         if (Redis::exists('good')) {
             $good = Redis::get('good');
             var_dump($good);
