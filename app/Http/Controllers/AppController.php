@@ -3,13 +3,69 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use DB;
-use Redis;
-
+use Illuminate\Support\Facades\Redis;
+use App\Model\App_ad;
+use App\Model\App_model;
+use App\Model\User_model;
 
 #todo 分享功能
 class AppController extends Controller
 {
+
+    var $app_model;
+
+    public function __construct()
+    {
+        $this->app_model = new \App\Model\App_model();
+        header('Access-Control-Allow-Origin:*');
+    }
+
+    #验证不为空
+    public function checkNoBlank()
+    {
+
+    }
+
+    #创建Token
+    public function ceateToken($stats)
+    {
+
+    }
+
+    public function uuid()
+    {
+        return md5(uniqid(md5(microtime(true)),true));
+    }
+
+    #验证Token
+    public function checkToken($token, $stats)
+    {
+        $stats = serialize($stats);
+        $token_key = md5($stats);
+        $token_value = Redis::get($token_key);
+        if ($token != '' && $token == $token_value) {
+            return TRUE;
+        } else {
+            return FALSE;
+        }
+    }
+
+    #生成短信验证码
+    public function createCode($length)
+    {
+        return mt_rand(100000,999999);
+    }
+
+    #通过Token获取用户信息
+    public function getUserByToken($token)
+    {
+        $userId = Redis::get($token);
+        if ($userId != '') {
+            return $userId;
+        } else {
+            return FALSE;
+        }
+    }
 
     /**
      * 记录用户信息
@@ -28,43 +84,44 @@ class AppController extends Controller
 
     }
 
-
     #启动页
     public function startup(Request $request)
     {
-        $view_data = array(
-            'status' => "true",
-            'ad_type' => 'img',  #广告类型，img图片,gif图片，movie视频
-            'ad_img' => 'http://img.hb.aicdn.com/af00fa9ae20e034b92471917fdcc6045eba597a012c80-welVUf_fw658',      #广告图片地址
-            'ad_url' => 'http://www.gftbank.cn',      #广告链接
-            'ad_timer' => 3,     #广告倒计时
+        $token = $request->input('token');
+        $version = $request->input('version');
+        $platform = $request->input('platform');
+        $stats = $request->input('platform');
+
+        $stat = array(
+            'version' => $version,
+            'platform' => $platform
         );
-        $adpost = $request->input('ad');
-        if ($adpost == '1') {
-            $view_data = array(
-                'status' => "false",
-            );
-        }elseif ($adpost == 'gif') {
-            $view_data = array(
-                'status' => "true",
-                'ad_type' => 'gif',  #广告类型，img图片,gif图片，movie视频
-                'ad_img' => 'http://storage.slide.news.sina.com.cn/slidenews/77_ori/2017_39/74766_800609_366700.gif',      #广告图片地址
-                'ad_url' => 'http://www.gftbank.cn',      #广告链接
-                'ad_timer' => 3,     #广告倒计时
-            );
-        } elseif ($adpost == 'movie') {
-            $view_data = array(
-                'status' => "true",
-                'ad_type' => 'movie',  #广告类型，img图片,gif图片，movie视频
-                'ad_img' => 'https://imgcache.qq.com/tencentvideo_v1/playerv3/TPout.swf?max_age=86400&v=20161117&vid=u0531v7tzxt&auto=0',      #广告图片地址
-                'ad_url' => 'http://www.gftbank.cn',      #广告链接
-                'ad_timer' => 3,     #广告倒计时
-            );
+
+        if ($this->checkToken($token, $stats)) {
+
         }
 
+        $model = new \App\Model\App_ad();
+        $ad_data = $model->ad();
+        if ($ad_data === FALSE) {
+            $view_data = array(
+                'status' => 'false',
+                'code' => '404'
+            );
+        } else {
+            /*$view_data = array(
+                'status' => 'true',
+                'code'   => '0',
+                'ad_data'=> $ad_data
+            );*/
+            $view_data = array(
+                'status' => 'true',
+                'code' => '0'
+            );
+            $view_data = array_merge( $ad_data, $view_data);
+        }
         echo json_encode($view_data);
     }
-
 
     /**
      * 广告中转
@@ -77,25 +134,36 @@ class AppController extends Controller
     }
 
     #主页数据
-    public function homepage()
+    public function homepage(Request $request)
     {
+        $token = $request->input('token');
+        $App_model = new \App\Model\App_model();
+        $banner_data = $App_model->banners();
+
+
         $view_data = array(
             'status' => 'true',
-            'banner' => array(
-                array(
-                    'img' => 'http://img.hb.aicdn.com/e9a5ce03594f3024f02b43d94e97ab525517bed563471-0C7vRF_fw658',
-                    'banner_type' => 'url',   #banner跳转类型   url网页打开   inner 内部跳转页面
-                    'uri' => 'http://www.gftbank.cn'
-                ),
-                array(
-                    'img' => 'http://img.hb.aicdn.com/a76ab27987cd86d656085e4f7950beb8b2a1b4c8b6866-PvVIIq_fw658',
-                    'banner_type' => 'inner',
-                    'uri' => 'user/info'
-                ),
-            ),
+            'code'   => '0',
+            'banner' => $banner_data,
             'new_skin' => 'false',   #是否有新皮肤
+            'little_activity' => array(
+                'cover' => '',
+                'url' => '',
+            ),
         );
 
+
+        $activity_data = $App_model->activity();
+        if ($activity_data !== FALSE) {
+            if (Redis::get('activity_'.$token) == 1){
+
+            } else {
+                $view_data['activity'] = $activity_data;
+                Redis::set('activity_'.$token, 1);
+            }
+        }
+        header('Access-Control-Allow-Origin:*');
+        header('Content-type: text/json;');
         echo json_encode($view_data);
     }
 
@@ -111,33 +179,31 @@ class AppController extends Controller
         $mobile = $request->input('mobile');
         $password = $request->input('password');
 
-        $test_mobile = '15988888888';
-        $test_password = '12345678';
-
-        $kong_mobile = '15900000000';
-        if ($mobile == $test_mobile && $password == $test_password) {
-            $result = 'true';
-        } elseif ($mobile == $kong_mobile) {
-            $result = 'no';
-        } else {
-            $result = 'false';
+        if ($mobile == '' || $password == '') {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '405'
+            );
+            echo json_encode($view_data); exit;
         }
 
-        if ($result == 'true') {
-            $view_data = array(
-                'status' => 'true',
-                'code'   => '0',
-                'access_token' => 'in88888888'
-            );
-        } elseif ($result == 'no') {
+        $user_model = new \App\Model\User_model();
+        $userinfo = $user_model->userUnique($mobile);
+        if ($userinfo === FALSE) {
             $view_data = array(
                 'status' => 'false',
-                'code'   => '404'
+                'code' => '404'
+            );
+        } elseif ($user_model->encryption($password, $userinfo->salt) != $userinfo->password) {
+            $view_data = array(
+                'status' => 'false',
+                'code' => '400'
             );
         } else {
             $view_data = array(
-                'status' => 'false',
-                'code'   => '400'
+                'status' => 'true',
+                'code' => '0',
+                'access_token' => 'in88888888'
             );
         }
         echo json_encode($view_data);
@@ -149,33 +215,28 @@ class AppController extends Controller
         $mobile = $request->input('mobile');
         $smsscode = $request->input('smsscode');
 
-        $test_mobile = '15988888888';
-        $test_code = '333333';
-
-        if ($mobile == $test_mobile && $smsscode == $test_code) {
-            $result = 'true';
-        } elseif ($mobile == $test_mobile && $smsscode != $test_code) {
-            $result = 'no';
-        } else {
-            $result = 'false';
-        }
-
-        if ($result == 'true') {
-            $view_data = array(
-                'status' => 'true',
-                'code'   => '0',
-                'access_token' => 'in88888888'
-            );
-        } elseif ($result == 'no') {
+        $user_model = new \App\Model\User_model();
+        $userinfo = $user_model->userUnique($mobile);
+        if ($userinfo === FALSE) {
             $view_data = array(
                 'status' => 'false',
-                'code'   => '400'       #短信验证码不正确
+                'code' => '404'
             );
         } else {
-            $view_data = array(
-                'status' => 'false',
-                'code'   => '400'
-            );
+            $codeInfo = $this->app_model->checkSmsscode($mobile, $smsscode, 'login');
+            if ($codeInfo['result'] == 'true') {    #验证成功
+                #成功之后，记录用户信息  todo:
+
+                $view_data = array(
+                    'status' => 'true',
+                    'code'   => '0'
+                );
+            } else {
+                $view_data = array(
+                    'status' => 'false',
+                    'code' => '400'
+                );
+            }
         }
         echo json_encode($view_data);
     }
@@ -184,7 +245,7 @@ class AppController extends Controller
     public function thirdLogin(Request $request)
     {
         $channel = $request->input('channel');
-        $openid  = $request->input('openid');
+        $openid = $request->input('openid');
 
         #查看绑定情况，如果已经绑定原用户，就返回登录信息
         #如果没有绑定原用户，就提示绑定原系统用户或注册
@@ -204,12 +265,12 @@ class AppController extends Controller
     public function captcha(Request $request)
     {
         $token = $request->input('token');
-        $type  = $request->input('type');
+        $type = $request->input('type');
 
         $busy_mobile = '1233';
         if ($token == $busy_mobile) {
             $result = 'reject';
-        } elseif ($token =='') {
+        } elseif ($token == '') {
             $result = 'true';
         } else {
             $result = 'false';
@@ -218,61 +279,106 @@ class AppController extends Controller
         if ($result == 'true') {
             $view_data = array(
                 'status' => 'true',
-                'code'   => '0',
+                'code' => '0',
                 'captcha' => 'http://img.hb.aicdn.com/9a274ec4e78e37030886c89a155900d5fc4271f554e73-U54dBI_fw658'
             );
         } elseif ($result == 'reject') {
             $view_data = array(
                 'status' => 'false',
-                'code'   => '402'       #请求过于频繁，请等待
+                'code' => '402'       #请求过于频繁，请等待
             );
         } else {
             $view_data = array(
                 'status' => 'false',
-                'code'   => '400'       #图形验证码不正确
+                'code' => '400'       #图形验证码不正确
             );
         }
         echo json_encode($view_data);
 
     }
 
+    #获取短信验证码
     public function getSmsscode(Request $request)
     {
         $mobile = $request->input('mobile');
         $captcha = $request->input('captcha');
-        $type  = $request->input('type');
+        $type = $request->input('type');
 
-        $test_mobile = '15988888888';
-        $test_captcha = 'ased';
-        $busy_mobile = '15966666666';
-        if ($mobile == $test_mobile &&  $test_captcha == $captcha) {
-            $result = 'true';
-        }elseif ($mobile == $test_mobile && $test_captcha != $captcha) {
-            $result = 'false';
-        } elseif ($mobile == $busy_mobile) {
-            $result = 'reject';
-        } else {
-            $result = 'false';
+        if (trim($type) == '' || $mobile == '') {
+            $view_data = array(
+                'status' => 'false',
+                'code' => '405'
+            );
+            echo json_encode($view_data); exit;
         }
 
-        if ($result == 'true') {
+        $code = $this->createCode(6);
+        $result = $this->app_model->insertSmsscode($mobile, $code, $type);
+        if ($result === TRUE) { #发送短信
+
             $view_data = array(
                 'status' => 'true',
-                'code'   => '0'
+                'code' => '0',
+                'data' => $code     #正式环境，屏蔽掉
+            );
+            echo json_encode($view_data); exit;
+        }
+
+        /*if ($result == 'true') {
+            $view_data = array(
+                'status' => 'true',
+                'code' => '0'
             );
         } elseif ($result == 'reject') {
             $view_data = array(
                 'status' => 'false',
-                'code'   => '402'       #请求过于频繁，请等待
+                'code' => '402'       #请求过于频繁，请等待
             );
         } else {
             $view_data = array(
                 'status' => 'false',
-                'code'   => '400'       #图形验证码不正确
+                'code' => '400'       #图形验证码不正确
+            );
+        }*/
+        #echo json_encode($view_data);
+    }
+
+    #校验短信验证码
+    public function checkSmsscode(Request $request)
+    {
+        $mobile = $request->input('mobile');
+        $type = $request->input('type');
+        $code = $request->input('code');
+        if ($mobile == '' || $type == '') {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '405'
+            );
+            echo json_encode($view_data); exit;
+        }
+
+        $result = $this->app_model->checkSmsscode($mobile, $code, $type);
+        echo json_encode($result);
+    }
+
+    #检测手机号是否存在
+    public function checkMobile(Request $request)
+    {
+        $mobile = $request->input('mobile');
+        $user_model = new \App\Model\User_model();
+        $userInfo = $user_model->userUnique($mobile);
+        if ($userInfo === 'false') {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '404'
+            );
+        } else {
+            $view_data = array(
+                'status' => "true",
+                'code'   => '0'
             );
         }
         echo json_encode($view_data);
-
     }
 
     #注册
@@ -283,145 +389,80 @@ class AppController extends Controller
         $password = $request->input('password');
         $invite_code = $request->input('invite_code');
 
-        $test_mobile = '15988888888';
-        $test_password = '12345678';
-        $test_code = '333333';
-
-        if ($mobile == $test_mobile && $smsscode == $test_code) {
-            $result = 'true';
-        } elseif ($mobile == $test_mobile && $smsscode != $test_code) {
-            $result = 'no';
-        } else {
-            $result = 'false';
-        }
-
-        if ($result == 'true') {
-            $view_data = array(
-                'status' => 'true',
-                'code'   => '0',
-                'access_token' => 'in88888888'
-            );
-        } elseif ($result == 'no') {
-            $view_data = array(
+        $user_model = new \App\Model\User_model();
+        $userInfo = $user_model->userUnique($mobile);
+        if ($userInfo !== FALSE) {
+            $view_data = [
                 'status' => 'false',
-                'code'   => '400'       #短信验证码不正确
-            );
+                'code' => '401'       #手机号已经注册
+            ];
         } else {
-            $view_data = array(
-                'status' => 'false',
-                'code'   => '400'
-            );
-        }
-        echo json_encode($view_data);
-    }
-
-    #上拉加载更多
-    public function pullup(Request $request)
-    {
-        $cate = $request->input('category');
-        $view_data = array(
-            array(
-                'id' => '1',
-                'title' => '测试数据1', #标题
-                'cover' => 'http://img.hb.aicdn.com/c9196acdb337c8d74e70b654bc4d9b0ee69b4c5820ee2-CGdpi9_fw658',  #封面
-                'description' => '描述',  #描述
-                'cateid' => '1',
-                'category' => '分类1',
-                'ishot'  => '1',
-                'pv' => '0',
-                'praise' => '0',
-                'logtime'   => '1516068637'
-            ),
-            array(
-                'id' => '2',
-                'title' => '测试数据2', #标题
-                'cover' => 'http://img.hb.aicdn.com/c9196acdb337c8d74e70b654bc4d9b0ee69b4c5820ee2-CGdpi9_fw658',  #封面
-                'description' => '描述',  #描述
-                'cateid' => '1',
-                'category' => '分类1',
-                'ishot'  => '1',
-                'pv' => '0',
-                'praise' => '0',
-                'logtime'   => '1516068637'
-            ),
-            array(
-                'id' => '3',
-                'title' => '测试数据3', #标题
-                'cover' => 'http://img.hb.aicdn.com/c9196acdb337c8d74e70b654bc4d9b0ee69b4c5820ee2-CGdpi9_fw658',  #封面
-                'description' => '描述',  #描述
-                'cateid' => '1',
-                'category' => '分类1',
-                'ishot'  => '1',
-                'pv' => '0',
-                'praise' => '0',
-                'logtime'   => '1516068637'
-            ),
-            array(
-                'id' => '4',
-                'title' => '测试数据4', #标题
-                'cover' => 'http://img.hb.aicdn.com/c9196acdb337c8d74e70b654bc4d9b0ee69b4c5820ee2-CGdpi9_fw658',  #封面
-                'description' => '描述',  #描述
-                'cateid' => '1',
-                'category' => '分类1',
-                'ishot'  => '1',
-                'pv' => '0',
-                'praise' => '0',
-                'logtime'   => '1516068637'
-            ),
-            array(
-                'id' => '5',
-                'title' => '测试数据5', #标题
-                'cover' => 'http://img.hb.aicdn.com/c9196acdb337c8d74e70b654bc4d9b0ee69b4c5820ee2-CGdpi9_fw658',  #封面
-                'description' => '描述',  #描述
-                'cateid' => '2',
-                'category' => '分类2',
-                'ishot'  => '1',
-                'pv' => '0',
-                'praise' => '0',
-                'logtime'   => '1516068637'
-            ),
-        );
-        echo json_encode($view_data);
-    }
-
-    #下拉刷新
-    public function pulldown(Request $request)
-    {
-        $cate = $request->input('category');
-        $page = $request->input('page');
-        $num = 5;
-        $start = ($page - 1) * $num;
-        if ($page < 5) {
-            $view_data = array(
-                'status' => 'true'
-            );
-            for ($i = 1; $i <= 5; $i++) {
-                $id = $start + 1;
-                $view_data['data'][] = array(
-                    array(
-                        'id' => $id,
-                        'title' => '测试数据' . $id, #标题
-                        'cover' => 'http://img.hb.aicdn.com/c9196acdb337c8d74e70b654bc4d9b0ee69b4c5820ee2-CGdpi9_fw658',  #封面
-                        'description' => '描述',  #描述
-                        'cateid' => '1',
-                        'category' => '分类1',
-                        'ishot' => '1',
-                        'pv' => '0',
-                        'praise' => '0',
-                        'logtime' => '1516068637'
-                    ),
+            $codeInfo = $this->app_model->checkSmsscode($mobile, $smsscode, 'reg');
+            if ($codeInfo['result'] == 'true') {
+                $user = $user_model->createUser($mobile, $password);
+                if ($user === TRUE) {   #注册成功
+                    #todo 填写邀请码，使用队列做处理
+                    $view_data = array(
+                        'status' => 'true',
+                        'code' => '0',
+                        'access_token' => 'in88888888'
+                    );
+                } else {
+                    $view_data = array(
+                        'status' => 'false',
+                        'code' => '400'
+                    );
+                }
+            } else {
+                $view_data = array(
+                    'status' => 'false',
+                    'code' => '400'       #短信验证码不正确
                 );
             }
-        } else {
-            $view_data = array(
-                'status' => 'false',
-                'code'   => '400'
-            );
         }
-
         echo json_encode($view_data);
     }
 
+    #忘记密码
+    public function forgetPassword(Request $request)
+    {
+        $mobile = $request->input('mobile');
+        $smsscode = $request->input('smsscode');
+        $password = $request->input('password');
+
+        $user_model = new \App\Model\User_model();
+        $userInfo = $user_model->userUnique($mobile);
+        if ($userInfo === FALSE) {
+            $view_data = [
+                'status' => 'false',
+                'code' => '405'
+            ];
+            echo json_encode($view_data); exit;
+        } else {
+            $codeInfo = $this->app_model->checkSmsscode($mobile, $smsscode, 'forget');
+            if ($codeInfo['result'] == 'true') {    #验证成功
+                #成功之后,修改密码
+                $back = $user_model->resetPassword($userInfo->user_id, $password, $userInfo->salt);
+                if ($back == TRUE) {
+                    $view_data = array(
+                        'status' => 'true',
+                        'code' => '0'
+                    );
+                } else {
+                    $view_data = array(
+                        'status' => 'false',
+                        'code' => '400'
+                    );
+                }
+            } else {
+                $view_data = array(
+                    'status' => 'false',
+                    'code' => '409'
+                );
+            }
+        }
+        echo json_encode($view_data);
+    }
 
     #服务条款
     public function service()
@@ -444,22 +485,60 @@ class AppController extends Controller
     #反馈
     public function feedback(Request $request)
     {
-        $feedback = $request->input('feedback');
+        if ($request->hasFile('headimg') && $request->file('headimg')->isValid()) {
+            $file = $request->file('headimg');
+            var_dump($file);
+            $extension = $file->extension();
+            $store_result = $photo->store();
+            var_dump($store_result);
+        }
 
     }
 
-    public function dbselect()
+    public function uploadFile()
     {
-        /*$users = DB::select('select * from m_user_users');
-        var_dump($users);*/
+        return view('uploadFile');
+    }
 
-        Redis::set('good', 'testgood');
-        if (Redis::exists('good')) {
-            $good = Redis::get('good');
-            var_dump($good);
+    public function uploadHead(Request $request)
+    {
+        if ($request->hasFile('imgfile') && $request->file('imgfile')->isValid()) {
+            $file = $request->file('imgfile');
+            $size = $file->getSize();
+            if ($size > 512500) {
+                $view_data = array(
+                    'status' => 'true',
+                    'code'   => '505',
+                    'info'   => 'too big'
+                );
+                echo json_encode($view_data); exit;
+            }
+            $extension = $file->extension();
+            #$clientName = $file -> getClientOriginalName();
+            #$clientPath = $file -> getRealPath();
+            $newName = base64_encode(rand(10000000,999999999)).'.'.$extension;
+            #$path = $file -> move('./uploads',$newName);
+            $path = false;
+            $realpath = 'http://api.hzz.com'.'/uploads/'.$newName;
+            if ($path) {
+                $view_data = array(
+                    'status' => 'true',
+                    'code'   => '0',
+                    'data'   => $realpath
+                );
+            } else {
+                $view_data = array(
+                    'status' => 'false',
+                    'code'   => '400'
+                );
+            }
         } else {
-            echo "errro";
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '400'
+            );
         }
+        echo json_encode($view_data);
     }
 
 }
