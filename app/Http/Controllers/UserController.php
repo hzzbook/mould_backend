@@ -13,7 +13,7 @@ class UserController extends AppController
 
     public function __construct(Request $request)
     {
-        parent::__construct();
+        parent::__construct($request);
         $this->_request = $request;
         $auth_info = $this->getUserByToken($this->_request->input('token'));
         if ($auth_info == FALSE) {
@@ -287,7 +287,7 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
-    #消息列表
+    #消息列表 todo
     public function messages(Request $request)
     {
         $view_data = array(
@@ -303,7 +303,7 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
-    #消息
+    #消息 todo
     public function message(Request $request)
     {
         $token = $request->input('token');
@@ -331,7 +331,7 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
-    #标记为已读
+    #标记为已读 todo
     public function messageReaded(Request $request)
     {
         $token = $request->input('token');
@@ -356,7 +356,7 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
-    #删除消息
+    #删除消息 todo
     public function messageDelete(Request $request)
     {
         $token = $request->input('token');
@@ -381,6 +381,9 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
+    public function collectArticle(Request $request)
+    {
 
+    }
 
 }

@@ -20,31 +20,31 @@ Route::post('/', function () {
 Route::post('/startup', 'AppController@startup');
 
 #主页数据
-Route::post('/homepage', 'AppController@homepage');
+Route::post('/homepage', 'AppbaseController@homepage');
 
 #App登录
-Route::post('/login', 'AppController@login');
+Route::post('/login', 'AppbaseController@login');
 
 #App快捷登录
-Route::post('/quicklogin', 'AppController@quicklogin');
+Route::post('/quicklogin', 'AppbaseController@quicklogin');
 
 #获取验证码
-Route::post('/get_smsscode', 'AppController@getSmsscode');
+Route::post('/get_smsscode', 'AppbaseController@getSmsscode');
 
 #检测验证码
-Route::post('/check_smsscode', 'AppController@checkSmsscode');
+Route::post('/check_smsscode', 'AppbaseController@checkSmsscode');
 
 #手机号是否存在
-Route::post('/check_mobile', 'AppController@checkMobile');
+Route::post('/check_mobile', 'AppbaseController@checkMobile');
 
 #图形验证码
-Route::post('/captcha', 'AppController@captcha');
+Route::post('/captcha', 'AppbaseController@captcha');
 
 #App注册
-Route::post('/register', 'AppController@register');
+Route::post('/register', 'AppbaseController@register');
 
 #忘记密码
-Route::post('/forget_password', 'AppController@forgetPassword');
+Route::post('/forget_password', 'AppbaseController@forgetPassword');
 
 #第三方帐号绑定
 Route::post('/third_account', 'UserController@thirdAccount');
@@ -104,11 +104,11 @@ Route::get('dbselect', 'AppController@dbselect');
 
 
 #网页
-Route::get('/service.html', 'AppController@service');
-Route::get('/privacy.html', 'AppController@privacy');
-Route::get('/helper.html', 'AppController@helper');
+Route::get('/service.html', 'AppbaseController@service');
+Route::get('/privacy.html', 'AppbaseController@privacy');
+Route::get('/helper.html', 'AppbaseController@helper');
 
-Route::post('/feedback', 'AppController@feedback');
+Route::post('/feedback', 'AppbaseController@feedback');
 
 
 #文件上传页面
