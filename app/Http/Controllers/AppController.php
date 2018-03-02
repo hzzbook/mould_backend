@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Redis;
 use App\Model\App_ad;
 use App\Model\App_model;
 use App\Model\User_model;
+use App\Model\Integral_model;
 
 #todo 分享功能
 class AppController extends Controller
@@ -47,6 +48,19 @@ class AppController extends Controller
             return TRUE;
         } else {
             return FALSE;
+        }
+    }
+
+    #验证Token并且返回
+    public function backCheckToken($token)
+    {
+        if ($this->checkToken($token) === FALSE) {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '100',
+                'info'   => 'Token does not exist '
+            );
+            echo json_encode($view_data); exit;
         }
     }
 

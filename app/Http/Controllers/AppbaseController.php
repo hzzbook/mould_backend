@@ -18,14 +18,7 @@ class AppbaseController extends AppController
         parent::__construct($request);
         $token = $request->input('token');
         /*if ($token != '') {
-            if ($this->checkToken($token) === FALSE) {
-                $view_data = array(
-                    'status' => 'false',
-                    'code'   => '100',
-                    'info'   => 'Token does not exist '
-                );
-                echo json_encode($view_data); exit;
-            }
+            $this->backCheckToken($token);
         }*/
     }
 
@@ -453,5 +446,45 @@ class AppbaseController extends AppController
         }
         echo json_encode($view_data);
     }
+
+    #检测最新版本
+    public function latestVersion(Request $request)
+    {
+        $platform = $request->input('platform');
+        $version = $request->input('version');
+
+        $appModel = new App_model();
+        $versionInfo = $appModel->latestVesion($platform);
+
+        if ($versionInfo->version_no == $version) {
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0',
+                'is_latest' => '1'
+            );
+        } else {
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0',
+                'is_latest' => '0',
+                'latest_data'   => $versionInfo
+            );
+        }
+        echo json_encode($view_data);
+    }
+
+    #系统公告列表
+    public function affiches()
+    {
+
+    }
+
+    #系统公告详情
+    public function affiche()
+    {
+
+    }
+
+
 
 }

@@ -83,6 +83,33 @@ Route::post('/message_readed', 'UserController@messageReaded');
 #删除消息
 Route::post('/message_delete', 'UserController@messageDelete');
 
+
+////////////////////////////////////////////////////////////////////
+#签到信息查询
+Route::post('/sign_info', 'UserController@signInfo');
+#签到操作
+Route::post('/sign', 'UserController@sign');
+
+
+////////////////////////////////////////////////////////////////////
+#版本检测
+Route::post('/latest_version', 'AppbaseController@latestVersion');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Route::post('/articles', 'ContentController@articles');
 Route::get('/articles', 'ContentController@articles');
 Route::post('/add_article', 'ContentController@addArticle');

@@ -80,4 +80,50 @@ class App_model extends Model
         return $back;
     }
 
+    public function latestVesion($platform)
+    {
+        $back = DB::table('app_version')
+            ->where('platform',$platform)
+            ->orderBy('version_id', 'desc')
+            ->first();
+        return $back;
+    }
+
+    public function affiches()
+    {
+        $affiches = DB::table('app_affiche')
+            ->where('status', '1')
+            ->orderBy('affiche_id', 'desc')
+            ->paginate(10)->toArray();
+        return $affiches;
+    }
+
+    public function affiche($id)
+    {
+        $affiche = DB::table('app_affiche')
+            ->where('affiche_id', $id)
+            ->get()->first();
+        return $affiche;
+    }
+
+    #提交反馈
+    public function feedback($userId, $type, $content, $images)
+    {
+        $date = date('Y-m-d H:i:s');
+        $back = DB::table('app_feedback')
+            ->insert([
+                'user_id' => $userId,
+                'content'   => $content,
+                'type'   => $type,
+                'images' => $images,
+                'date'   => $date
+            ]);
+        return $back;
+    }
+
+    public function feedbacks()
+    {
+
+    }
+
 }

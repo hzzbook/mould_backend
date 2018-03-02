@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use DB;
 
+
 #todo 分享功能
 class UserController extends AppController
 {
@@ -384,6 +385,51 @@ class UserController extends AppController
     public function collectArticle(Request $request)
     {
 
+    }
+
+    #签到情况
+    public function signInfo(Request $request)
+    {
+        $user_model = new \App\Model\User_model();
+        $signInfo = $user_model->signInfo($this->userid);
+        if ($signInfo == '') {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '866',
+                'info'   => '尚无签到记录'
+            );
+        } else {
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0',
+                'data'   => $signInfo
+            );
+        }
+        echo json_encode($view_data);
+    }
+
+    #签到操作
+    public function sign(Request $request)
+    {
+        $user_model = new \App\Model\User_model();
+        $signInfo = $user_model->sign($this->userid);
+        if ($signInfo['status'] === 'true') {
+            $continue = $signInfo['continue'];   #根据连续签到次数增加积分
+            $sign_id = $signInfo['insert_id'];   #签到id
+
+            #$integral = new
+
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0'
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '876'       #同一天不能重复签到
+            );
+        }
+        echo json_encode($view_data);
     }
 
 }

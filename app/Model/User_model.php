@@ -40,6 +40,7 @@ class User_model extends Model
         return $back;
     }
 
+    #重置密码
     public function resetPassword($id, $password, $salt)
     {
         $newPassword = $this->encryption($password, $salt);
@@ -51,6 +52,7 @@ class User_model extends Model
         return $back;
     }
 
+    #更改手机号
     public function changeMobile($id, $mobile)
     {
         $back = DB::table('user_users')
@@ -61,6 +63,7 @@ class User_model extends Model
         return $back;
     }
 
+    #判断唯一性，（手机，用户名，邮箱，身份证号）
     public function userUnique($value, $key = 'mobile')
     {
         $back = DB::table('user_users')
@@ -74,9 +77,75 @@ class User_model extends Model
         return $back;
     }
 
+    #根据id查询用户信息
     public function userById($id)
     {
         return $this->userUnique($id, 'user_id');
+    }
+
+    #签到情况
+    public function signInfo($userId)
+    {
+        $back = DB::table('user_sign')
+            ->where('user_id', $userId)
+            ->orderBy('date', 'desc')
+            ->first();
+
+        return $back;
+    }
+
+    #签到操作
+    public function sign($userId)
+    {
+        $date = date('Y-m-d');
+        $signInfo = $this->signInfo($userId);
+        $continue = 1;
+        $back = 'true';
+        if ($signInfo == '') {
+            $insertData= [
+                'user_id' => $userId,
+                'continue'  => $continue,
+                'date'  => date('Y-m-d'),
+                'logtime' => date('Y-m-d H:i:s')
+            ];
+            $insert_id = DB::table('user_sign')->insertGetId($insertData);
+        } else {
+            $chazhi = strtotime($date) - strtotime($signInfo->date);
+            if ($chazhi < 3600*24) {
+                $back = false;  #同一天不能重复签到
+            }elseif ($chazhi >= 3600*24 && $chazhi < 7200*24) { #相差一天签到（连续签到））
+                $continue = $signInfo->continue + 1;
+                $insertData= [
+                    'user_id' => $userId,
+                    'continue'  => $continue,
+                    'date'  => date('Y-m-d'),
+                    'logtime' => date('Y-m-d H:i:s')
+                ];
+                $insert_id = DB::table('user_sign')->insertGetId($insertData);
+            } else {
+                $insertData=[
+                    'user_id' => $userId,
+                    'continue'  => $continue,
+                    'date'  => date('Y-m-d'),
+                    'logtime' => date('Y-m-d H:i:s')
+                ];
+                $insert_id = DB::table('user_sign')->insertGetId($insertData);
+            }
+        }
+        #return $back;
+        if ($back == false) {
+            $result = array(
+                'status' => 'false'
+            );
+        } else {
+
+            $result = array(
+                'status' => 'true',
+                'continue' => $continue,
+                'insert_id' => $insert_id
+            );
+        }
+        return $result;
     }
 
 }
