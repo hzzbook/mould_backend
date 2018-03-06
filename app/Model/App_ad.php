@@ -11,7 +11,7 @@ class App_ad extends Model
 
     public function ads()
     {
-
+        
     }
 
     public function ad()

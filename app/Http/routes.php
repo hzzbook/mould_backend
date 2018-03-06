@@ -83,28 +83,22 @@ Route::post('/message_readed', 'UserController@messageReaded');
 #删除消息
 Route::post('/message_delete', 'UserController@messageDelete');
 
-
+#公告列表，默认取三条
+Route::get('/affiches', 'AppbaseController@affiches');
+Route::get('/affiche', 'AppbaseController@affiche');
 ////////////////////////////////////////////////////////////////////
 #签到信息查询
 Route::post('/sign_info', 'UserController@signInfo');
 #签到操作
 Route::post('/sign', 'UserController@sign');
 
+#用户反馈
+Route::post('/feedback', 'UserController@feedback');
+
 
 ////////////////////////////////////////////////////////////////////
 #版本检测
 Route::post('/latest_version', 'AppbaseController@latestVersion');
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -134,8 +128,6 @@ Route::get('dbselect', 'AppController@dbselect');
 Route::get('/service.html', 'AppbaseController@service');
 Route::get('/privacy.html', 'AppbaseController@privacy');
 Route::get('/helper.html', 'AppbaseController@helper');
-
-Route::post('/feedback', 'AppbaseController@feedback');
 
 
 #文件上传页面

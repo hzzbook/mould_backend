@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 class App_model extends Model
 {
+    #主页轮播
     public function banners()
     {
         $banner = DB::table('app_banner')
@@ -15,6 +16,7 @@ class App_model extends Model
         return $banner;
     }
 
+    #App活动
     public function activity()
     {
         $time = date('Y-m-d H:i:s');
@@ -22,7 +24,7 @@ class App_model extends Model
             ->where('starttime','<', $time)
             ->where('endtime','>', $time)
             ->get();
-        #var_dump($back);
+
         if (!empty($back)) {
             $back = $back[0];
         } else {
@@ -31,6 +33,7 @@ class App_model extends Model
         return $back;
     }
 
+    #短信验证码
     public function insertSmsscode($mobile, $code, $type)
     {
         $time = time();
@@ -44,6 +47,7 @@ class App_model extends Model
         return $back;
     }
 
+    #验证短信验证码
     public function checkSmsscode($mobile, $code, $type)
     {
         $time = time()-3600*24;
@@ -80,6 +84,7 @@ class App_model extends Model
         return $back;
     }
 
+    #最新版信息
     public function latestVesion($platform)
     {
         $back = DB::table('app_version')
@@ -89,20 +94,25 @@ class App_model extends Model
         return $back;
     }
 
-    public function affiches()
+    #公告列表
+    public function affiches($num = 3)
     {
         $affiches = DB::table('app_affiche')
             ->where('status', '1')
             ->orderBy('affiche_id', 'desc')
-            ->paginate(10)->toArray();
+            ->paginate($num)->toArray();
         return $affiches;
     }
 
+    #公告详情
     public function affiche($id)
     {
         $affiche = DB::table('app_affiche')
             ->where('affiche_id', $id)
-            ->get()->first();
+            ->get();
+        if ($affiche != '') {
+            $affiche = $affiche->first();
+        }
         return $affiche;
     }
 
@@ -119,11 +129,6 @@ class App_model extends Model
                 'date'   => $date
             ]);
         return $back;
-    }
-
-    public function feedbacks()
-    {
-
     }
 
 }

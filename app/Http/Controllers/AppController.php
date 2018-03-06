@@ -81,6 +81,11 @@ class AppController extends Controller
         }
     }
 
+    public function ip(Request $request)
+    {
+        var_dump($request->getClientIp());
+    }
+
     /**
      * 记录用户信息
      * client_id    客户端ID

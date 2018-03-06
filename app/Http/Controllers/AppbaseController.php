@@ -391,18 +391,7 @@ class AppbaseController extends AppController
         return view('helper');
     }
 
-    #反馈
-    public function feedback(Request $request)
-    {
-        if ($request->hasFile('headimg') && $request->file('headimg')->isValid()) {
-            $file = $request->file('headimg');
-            var_dump($file);
-            $extension = $file->extension();
-            $store_result = $photo->store();
-            var_dump($store_result);
-        }
 
-    }
 
     #测试上传图片
     public function uploadHead(Request $request)
@@ -476,13 +465,42 @@ class AppbaseController extends AppController
     #系统公告列表
     public function affiches()
     {
+        $affiche_data = $this->app_model->affiches();
+
+        if (!empty($affiche_data['data'])) {
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0',
+                'data'   => $affiche_data['data']
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '404'
+            );
+        }
+        echo json_encode($view_data);
 
     }
 
     #系统公告详情
-    public function affiche()
+    public function affiche(Request $request)
     {
-
+        $id = $request->input('id');
+        $affiche_info = $this->app_model->affiche($id);
+        if ($affiche_info != '') {
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0',
+                'data'   => $affiche_info
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '404'
+            );
+        }
+        echo json_encode($view_data);
     }
 
 

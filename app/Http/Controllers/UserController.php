@@ -82,18 +82,40 @@ class UserController extends AppController
             echo json_encode($view_data);
     }
 
-    #保存个人资料
+    #保存个人资料 todo 测试
     public function saveUserinfo(Request $request)
     {
         $headimg = $request->input('headimg');
         $nick    = $request->input('nick');
-        $view_data = array(
-            'status' => 'true',
-            'code'     => '0'
+        $sex    = $request->input('sex');
+        $birthday    = $request->input('birthday');
+        $city    = $request->input('city');
+        $introduction    = $request->input('introduction');
+        $user_model = new \App\Model\User_model();
+        $updateData = array(
+            'headimg' => $headimg,
+            'nick'    => $nick,
+            'sex'    => $sex,
+            'city' => $city,
+            'birthday' => $birthday,
+            'introduction' => $introduction,
         );
+        $back = $user_model->saveUserinfo($this->userid, $updateData);
+        if ($back == true) {
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0'
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '888'
+            );
+        }
+        echo json_encode($view_data);
     }
 
-    #帐号绑定情况
+    #帐号绑定情况 todo 测试
     public function thirdAccount(Request $request)
     {
         $user_model = new \App\Model\User_model();
@@ -229,6 +251,45 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
+    #更改支付密码
+    public function changePayPassword(Request $request)
+    {
+        $user_model = new \App\Model\User_model();
+        $userInfo = $user_model->userById($this->userid);
+        $old_password = $request->input('old_password');
+        $new_password = $request->input('new_password');
+        if ($old_password != '' && $new_password != '') {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '405'
+            );
+        }
+
+        #验证旧密码是否正确
+        if ($user_model->encryption($old_password, $userInfo->salt) != $userInfo->paypassword) {
+            $view_data = array(
+                'status' => 'false',
+                'code' => '400'
+            );
+            echo json_encode($view_data);exit;
+        }
+
+        #重设密码
+        $back = $user_model->resetPayPassword($this->userid, $new_password, $userInfo->salt);
+        if ($back === TRUE) {
+            $view_data = array(
+                'status' => 'true',
+                'code' => '0'
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code' => '400'
+            );
+        }
+        echo json_encode($view_data);
+    }
+
     #手机号改密码前验证短信
     public function changePasswordSmss(Request $request)
     {
@@ -288,6 +349,128 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
+    #手机更换支付密码
+    public function changePayPasswordMobile(Request $request)
+    {
+        $user_model = new \App\Model\User_model();
+        $userInfo = $user_model->userById($this->userid);
+        $password = $request->input('password');
+        $back = $user_model->resetPayPassword($this->userid, $password, $userInfo->salt);
+        if ($back === TRUE) {
+            $view_data = array(
+                'status' => 'true',
+                'code' => '0'
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code' => '400'
+            );
+        }
+        echo json_encode($view_data);
+    }
+
+    #实名认证 todo  添加第三方验证
+    public function realAuth(Request $request)
+    {
+        $fullname = $request->input('fullname');
+        $idcard   = $request->input('idcard');
+
+        #使用第三方接口验证身份信息
+        $authResult = true;
+        if ($authResult == true) {
+            $user_model = new \App\Model\User_model();
+            $back = $user_model->realAuth($this->userid, $fullname, $idcard);
+            if ($back == true) {
+                $view_data = array(
+                    'status' => 'true',
+                    'code'   => '0'
+                );
+            } else {
+                $view_data = array(
+                    'status' => "false",
+                    'code' => "900"
+                );
+            }
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => "899"
+            );
+        }
+        echo json_encode($view_data);
+    }
+
+    #收货地址
+    public function addresses()
+    {
+        $user_model = new \App\Model\User_model();
+        $addressInfo = $user_model->addresses($this->userid);
+        echo json_encode($addressInfo);
+    }
+
+    #收货地址详情
+    public function address(Request $request)
+    {
+        $addressId = $request->input('addressId');
+        $user_model = new \App\Model\User_model();
+        $addressInfo = $user_model->address($addressId, $this->userid);
+        echo json_encode($addressInfo);
+    }
+
+    #添加收货地址
+    public function addAddress(Request $request)
+    {
+        $fullname = $request->input('fullname');
+        $mobile = $request->input('mobile');
+        $district = $request->input('district');
+        $detail = $request->input('detail');
+        $is_default = $request->input('is_default');
+
+        $user_model = new \App\Model\User_model();
+        $addressData = array(
+            'fullname' => $fullname,
+            'mobile'  => $mobile,
+            'district' => $district,
+            'detail'   => $detail,
+            'is_default' => $is_default
+        );
+        $addressInfo = $user_model->address($this->userid, $addressData);
+        echo json_encode($addressInfo);
+    }
+
+    #删除收货地址
+    public function deleteAddress()
+    {
+        $addressId = $request->input('addressId');
+        $user_model = new \App\Model\User_model();
+        $addressInfo = $user_model->deleteAddress($addressId, $this->userid);
+        echo json_encode($addressInfo);
+    }
+
+    #编辑收货地址
+    public function saveAddress(Request $request)
+    {
+        $fullname = $request->input('fullname');
+        $mobile = $request->input('mobile');
+        $district = $request->input('district');
+        $detail = $request->input('detail');
+        $is_default = $request->input('is_default');
+
+        $addressId = $request->input('addressId');
+
+        $user_model = new \App\Model\User_model();
+        $addressData = array(
+            'fullname' => $fullname,
+            'mobile'  => $mobile,
+            'district' => $district,
+            'detail'   => $detail,
+            'is_default' => $is_default
+        );
+        $addressInfo = $user_model->saveAddress($this->userid, $addressId, $addressData);
+        echo json_encode($addressInfo);
+    }
+
     #消息列表 todo
     public function messages(Request $request)
     {
@@ -304,87 +487,76 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
-    #消息 todo
+    #消息详情
     public function message(Request $request)
     {
         $token = $request->input('token');
-        $id = $request->input('message_id');
-        $view_data = array(
-            'status' => 'true',
-            'data'  => array(
-                'id' => '1',
-                'title' => '标题1',
-                'type' => 'text',
-                'content' => '内容'
-            ),
-        );
+        $message_id = $request->input('message_id');
 
-        $view_data = array(
-            'status' => 'false',
-            'code' => "400",        #说明消息已经删除
-        );
-
-        $view_data = array(
-            'status' => 'false',
-            'code'   => '404'       #说明消息不存在
-        );
-
+        $userModel = new \App\Model\User_model();
+        $messageInfo = $userModel->message($this->userid, $message_id);
+        if ($messageInfo !='') {
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0',
+                'data'   => $messageInfo
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '404'
+            );
+        }
         echo json_encode($view_data);
     }
 
     #标记为已读 todo
-    public function messageReaded(Request $request)
+    public function readedMessage(Request $request)
     {
-        $token = $request->input('token');
-        $id = $request->input('message_id');
+        $message_id = $request->input('message_id');
 
-        $view_data = array(
-            'stauts' => 'true',
-            'code' => '0',
-        );
+        $userModel = new \App\Model\User_model();
+        $messageInfo = $userModel->message($this->userid, $message_id);
 
-        $view_data = array(
-            'status' => 'false',
-            'code' => '400',
-            'info'  => '该消息已经是已读了'
-        );
+        if ($messageInfo != '') {
+            $view_data = array(
+                'stauts' => 'true',
+                'code' => '0',
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code' => '400',
+                'info'  => '该消息已经是已读了'
+            );
+        }
 
-        $view_data = array(
-            'status' => 'false',
-            'code'   => '404',
-            'info'   => '消息不存在'
-        );
         echo json_encode($view_data);
     }
 
     #删除消息 todo
-    public function messageDelete(Request $request)
+    public function deleteMessage(Request $request)
     {
         $token = $request->input('token');
-        $id = $request->input('message_id');
+        $message_id = $request->input('message_id');
 
-        $view_data = array(
-            'stauts' => 'true',
-            'code' => '0',
-        );
+        $userModel = new \App\Model\User_model();
+        $messageInfo = $userModel->deleteAddress($this->userid, $message_id);
 
-        $view_data = array(
-            'status' => 'false',
-            'code' => '400',
-            'info'  => '删除失败'
-        );
+        if ($messageInfo != '') {
+            $view_data = array(
+                'stauts' => 'true',
+                'code' => '0',
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code' => '400',
+                'info'  => '删除失败'
+            );
+        }
 
-        $view_data = array(
-            'status' => 'false',
-            'code'   => '404',
-            'info'   => '消息不存在'
-        );
         echo json_encode($view_data);
-    }
-
-    public function collectArticle(Request $request)
-    {
-
     }
 
     #签到情况
@@ -408,7 +580,7 @@ class UserController extends AppController
         echo json_encode($view_data);
     }
 
-    #签到操作
+    #签到操作 todo 发放积分
     public function sign(Request $request)
     {
         $user_model = new \App\Model\User_model();
@@ -430,6 +602,37 @@ class UserController extends AppController
             );
         }
         echo json_encode($view_data);
+    }
+
+    #反馈
+    public function feedback(Request $request)
+    {
+        $type = $request->input('type');
+        $content = $request->input('content');
+        $imglist = $request->input('imglist');
+        $app_model = new \App\Model\App_model();
+        $result = $app_model->feedback($this->userid, $type, $content, $imglist);
+        if ($result == true) {
+            $view_data = array(
+                'status' => 'true',
+                'code'   => '0'
+            );
+        } else {
+            $view_data = array(
+                'status' => 'false',
+                'code'   => '900',
+                'info'   => '反馈失败'
+            );
+        }
+        echo json_encode($view_data);
+    }
+
+
+    #收藏文章  todo
+    public function collectArticle(Request $request)
+    {
+        $articleId = $request->input('articleId');
+
     }
 
 }
